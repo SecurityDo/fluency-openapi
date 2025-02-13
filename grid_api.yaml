@@ -156,12 +156,120 @@ components:
         infos:
           type: array
           items: 
-            $ref: '#/components/schemas/EntityInfo'         
+            $ref: '#/components/schemas/EntityInfo'
+    FPLTableColumnInfo:
+      type: object
+      properties:
+        name: 
+          type: string 
+        unit: 
+          type: string
+        columnType: 
+          type: string    
+    FPLDataTable:
+      type: object
+      properties:
+        rowCount:
+          description: table row count 
+          type: integer
+        columns:
+          type: array
+          items: 
+            $ref: '#/components/schemas/FPLTableColumnInfo' 
+        rows:
+          type: array
+          items: 
+            type: object  
+    FPLDataObject:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        table: 
+          $ref: '#/components/schemas/FPLDataTable'
+    FPLReportResult:
+      type: object
+      properties:
+        objects:
+          type: array
+          items: 
+            $ref: '#/components/schemas/FPLDataObject'
+    RunInvestigationRequest:
+      type: object
+      properties:
+        reportName:
+          type: string
+        name:
+          description: User/Asset name to be investigated.
+          type: string  
+        rangeFrom:
+          description: The start time of the investigation.
+          type: string
+          format: date-time
+          example: '2017-07-21T17:32:28Z'
+        rangeTo:
+          description: The end time of the investigation.
+          type: string
+          format: date-time
+          example: '2017-07-21T17:32:28Z'
+      required:
+        - reportName
+        - name    
+    RunInvestigationResponse:
+      type: object
+      properties:
+        result:
+          $ref: '#/components/schemas/FPLReportResult'
+            
 security:
   - bearerAuth: []
 
 paths:
-  /api/grid/assets/{name}:
+  /openapi/run_entity_investigation:
+    post:
+      summary: run an investigation on one asset or user
+      operationId: runEntityInvestigation
+      requestBody:
+        description: Run investigation report over one asset or user
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunInvestigationRequest"
+      parameters:
+        - name: account
+          in: query
+          required: true
+          description: customer account name
+          schema: 
+            type: string
+        - name: tenant
+          in: query
+          required: false
+          description: customer tenant name
+          schema: 
+            type: string
+      responses:
+        '200':
+          description: Return investigation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunInvestigationResponse"
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '401':
+          $ref: "#/components/responses/Unauthorized"          
+        '403':
+          $ref: "#/components/responses/Forbidden"          
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+  /openapi/assets/{name}:
     get:
       descriptions: get asset by name or EDR agentID
       operationId: getAssetByName
@@ -201,7 +309,7 @@ paths:
           $ref: "#/components/responses/BadRequest"
         '500':
           $ref: "#/components/responses/InternalServerError"
-  /api/grid/users/{name}:
+  /openapi/users/{name}:
     get:
       descriptions: get user by name or email
       operationId: getUserByName
